@@ -1,4 +1,4 @@
-val releaseV = "2.3.2"
+val releaseV = "2.3.3-oiconnect"
 
 val scala211V = "2.11.12"
 val scala212V = "2.12.10"
@@ -93,7 +93,6 @@ val commonSettings = Seq(
   testOptions in Test += Tests.Argument("-oDS"),
   testOptions in Travis += Tests.Argument("-l", "org.scalatest.tags.Slow"),
   fork in Test := true,
-  publishTo := sonatypePublishTo.value,
   publishConfiguration := publishConfiguration.value.withOverwrite(true),
   publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true)
 ) ++ inConfig(Travis)(Defaults.testTasks)

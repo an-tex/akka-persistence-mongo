@@ -2,6 +2,7 @@ package akka.contrib.persistence.mongodb
 
 import akka.NotUsed
 import akka.actor.ExtendedActorSystem
+import akka.contrib.persistence.mongodb.oiconnect.CurrentEventsByPersistenceIdAndLabelsQuery
 import akka.event.Logging
 import akka.persistence.query._
 import akka.persistence.query.javadsl.{CurrentEventsByPersistenceIdQuery => JCEBP, CurrentEventsByTagQuery => JCEBT, CurrentPersistenceIdsQuery => JCP, EventsByPersistenceIdQuery => JEBP, EventsByTagQuery => JEBT, PersistenceIdsQuery => JAPIQ}
@@ -57,7 +58,8 @@ class ScalaDslMongoReadJournal(impl: MongoPersistenceReadJournallingApi)(implici
     with CurrentEventsByTagQuery
     with PersistenceIdsQuery
     with EventsByPersistenceIdQuery
-    with EventsByTagQuery {
+    with EventsByTagQuery
+    with CurrentEventsByPersistenceIdAndLabelsQuery {
 
   import ScalaDslMongoReadJournal._
 
@@ -129,6 +131,13 @@ class ScalaDslMongoReadJournal(impl: MongoPersistenceReadJournallingApi)(implici
         .toEventEnvelopes
     (pastSource ++ realtimeSource).via(new RemoveDuplicatedEventEnvelopes)
   }
+
+  override def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long, labels: Seq[String]) = impl.currentEventsByPersistenceIdAndLabels(
+    persistenceId,
+    fromSequenceNr,
+    toSequenceNr,
+    labels
+  ).toEventEnvelopes
 }
 
 class JavaDslMongoReadJournal(rj: ScalaDslMongoReadJournal) extends javadsl.ReadJournal with JCP with JCEBP with JEBP with JAPIQ with JCEBT with JEBT {
@@ -284,6 +293,8 @@ trait MongoPersistenceReadJournallingApi {
   def currentPersistenceIds(implicit m: Materializer, ec: ExecutionContext): Source[String, NotUsed]
 
   def currentEventsByPersistenceId(persistenceId: String, fromSeq: Long, toSeq: Long)(implicit m: Materializer, ec: ExecutionContext): Source[Event, NotUsed]
+
+  def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String])(implicit m: Materializer, ec: ExecutionContext): Source[Event, NotUsed]
 
   def currentEventsByTag(tag: String, offset: Offset)(implicit m: Materializer, ec: ExecutionContext): Source[(Event, Offset), NotUsed]
 

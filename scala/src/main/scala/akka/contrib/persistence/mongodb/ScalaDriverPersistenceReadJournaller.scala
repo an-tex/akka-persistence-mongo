@@ -84,6 +84,41 @@ object CurrentEventsByPersistenceId {
   }
 }
 
+object CurrentEventsByPersistenceIdAndLabels {
+  private val LABELS = "events.p.labels"
+
+  def queryFor(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String]): conversions.Bson =
+    and(
+      equal(PROCESSOR_ID, persistenceId),
+      gte(TO, fromSeq),
+      lte(FROM, toSeq),
+      all(LABELS, labels :_ *)
+    )
+
+  def source(driver: ScalaMongoDriver, persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String]): Source[Event, NotUsed] = {
+    import driver.ScalaSerializers._
+
+    val query = queryFor(persistenceId, fromSeq, toSeq, labels)
+
+    Source.fromFuture(driver.getJournal(persistenceId))
+      .flatMapConcat(
+        _.find(query)
+          .sort(ascending(TO))
+          .projection(include(EVENTS))
+          .asAkka
+      ).map(_.asDocument)
+      .map(doc =>
+        Option(doc.get(EVENTS)).filter(_.isArray).map(_.asArray)
+          .map(_.getValues
+            .asScala
+            .collect {
+              case d: BsonDocument => driver.deserializeJournal(d)
+            })
+          .getOrElse(Nil)
+      ).mapConcat(_.toList)
+  }
+}
+
 object CurrentEventsByTag {
   def source(driver: ScalaMongoDriver, tag: String, fromOffset: Offset): Source[(Event, Offset), NotUsed] = {
     import driver.ScalaSerializers._
@@ -291,4 +326,5 @@ class ScalaDriverPersistenceReadJournaller(driver: ScalaMongoDriver, m: Material
       Option(equal(TAGS, tag))
     ).filter{ case(ev, off) => ev.tags.contains(tag) &&  ord.gt(off, offset)}
 
+  override def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String])(implicit m: Materializer, ec: ExecutionContext) = CurrentEventsByPersistenceIdAndLabels.source(driver, persistenceId, fromSeq, toSeq, labels)
 }

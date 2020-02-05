@@ -302,4 +302,6 @@ class RxMongoReadJournaller(driver: RxMongoDriver, m: Materializer) extends Mong
       TAGS -> tag
     ))).filter{ case(ev, off) => ev.tags.contains(tag) &&  ord.gt(off, offset)}
   }
+
+  override def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String])(implicit m: Materializer, ec: ExecutionContext) = ???
 }

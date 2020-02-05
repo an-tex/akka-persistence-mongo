@@ -301,4 +301,6 @@ class CasbahPersistenceReadJournaller(driver: CasbahMongoDriver) extends MongoPe
       Option(BasicDBObjectBuilder.start().append(driver.CasbahSerializers.TAGS, tag).get())
     )
   }
+
+  override def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String])(implicit m: Materializer, ec: ExecutionContext) = ???
 }

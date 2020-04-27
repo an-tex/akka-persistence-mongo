@@ -89,10 +89,14 @@ object CurrentEventsByPersistenceIdAndLabels {
 
   def queryFor(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String]): conversions.Bson =
     and(
-      equal(PROCESSOR_ID, persistenceId),
-      gte(TO, fromSeq),
-      lte(FROM, toSeq),
-      all(LABELS, labels :_ *)
+      Seq(equal(PROCESSOR_ID, persistenceId),
+        gte(TO, fromSeq),
+        lte(FROM, toSeq)
+      ) ++ (
+        if (labels.isEmpty) Nil
+        else Seq(all(LABELS, labels: _ *))
+        )
+        : _ *
     )
 
   def source(driver: ScalaMongoDriver, persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String]): Source[Event, NotUsed] = {

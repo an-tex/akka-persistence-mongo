@@ -1,4 +1,4 @@
-val releaseV = "2.3.2-oiconnect.4"
+val releaseV = "2.3.2-oiconnect.5"
 ThisBuild / licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 
 val scala211V = "2.11.12"

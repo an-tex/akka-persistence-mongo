@@ -87,7 +87,12 @@ object CurrentEventsByPersistenceId {
 object CurrentEventsByPersistenceIdAndLabels {
   private val LABELS = "events.p.labels"
 
-  def queryFor(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String]): conversions.Bson =
+  def queryFor(
+                persistenceId: String,
+                fromSeq: Long,
+                toSeq: Long,
+                labels: Seq[String]
+                ): conversions.Bson =
     and(
       Seq(equal(PROCESSOR_ID, persistenceId),
         gte(TO, fromSeq),
@@ -99,7 +104,15 @@ object CurrentEventsByPersistenceIdAndLabels {
         : _ *
     )
 
-  def source(driver: ScalaMongoDriver, persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String]): Source[Event, NotUsed] = {
+  def source(
+              driver: ScalaMongoDriver,
+              persistenceId: String,
+              fromSeq: Long,
+              toSeq: Long,
+              labels: Seq[String],
+              maxEvents: Option[Int],
+              sortAscending: Boolean
+            ): Source[Event, NotUsed] = {
     import driver.ScalaSerializers._
 
     val query = queryFor(persistenceId, fromSeq, toSeq, labels)
@@ -107,7 +120,8 @@ object CurrentEventsByPersistenceIdAndLabels {
     Source.fromFuture(driver.getJournal(persistenceId))
       .flatMapConcat(
         _.find(query)
-          .sort(ascending(TO))
+          .sort(if (sortAscending) ascending(TO) else descending(TO))
+          .limit(maxEvents.getOrElse(Int.MaxValue))
           .projection(include(EVENTS))
           .asAkka
       ).map(_.asDocument)
@@ -330,5 +344,12 @@ class ScalaDriverPersistenceReadJournaller(driver: ScalaMongoDriver, m: Material
       Option(equal(TAGS, tag))
     ).filter{ case(ev, off) => ev.tags.contains(tag) &&  ord.gt(off, offset)}
 
-  override def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String])(implicit m: Materializer, ec: ExecutionContext) = CurrentEventsByPersistenceIdAndLabels.source(driver, persistenceId, fromSeq, toSeq, labels)
+  override def currentEventsByPersistenceIdAndLabels(
+                                                      persistenceId: String,
+                                                      fromSeq: Long,
+                                                      toSeq: Long,
+                                                      labels: Seq[String],
+                                                      maxEvents: Option[Int] = None,
+                                                      sortAscending: Boolean = true
+                                                    )(implicit m: Materializer, ec: ExecutionContext) = CurrentEventsByPersistenceIdAndLabels.source(driver, persistenceId, fromSeq, toSeq, labels, maxEvents, sortAscending)
 }

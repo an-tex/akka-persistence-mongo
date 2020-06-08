@@ -132,12 +132,22 @@ class ScalaDslMongoReadJournal(impl: MongoPersistenceReadJournallingApi)(implici
     (pastSource ++ realtimeSource).via(new RemoveDuplicatedEventEnvelopes)
   }
 
-  override def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long, labels: Seq[String]) = impl.currentEventsByPersistenceIdAndLabels(
-    persistenceId,
-    fromSequenceNr,
-    toSequenceNr,
-    labels
-  ).toEventEnvelopes
+  override def currentEventsByPersistenceIdAndLabels(
+                                                      persistenceId: String,
+                                                      fromSequenceNr: Long,
+                                                      toSequenceNr: Long,
+                                                      labels: Seq[String],
+                                                      maxEvents: Option[Int] = None,
+                                                      sortAscending: Boolean = true
+                                                    ) =
+    impl.currentEventsByPersistenceIdAndLabels(
+      persistenceId,
+      fromSequenceNr,
+      toSequenceNr,
+      labels,
+      maxEvents,
+      sortAscending
+    ).toEventEnvelopes
 }
 
 class JavaDslMongoReadJournal(rj: ScalaDslMongoReadJournal) extends javadsl.ReadJournal with JCP with JCEBP with JEBP with JAPIQ with JCEBT with JEBT {
@@ -294,7 +304,14 @@ trait MongoPersistenceReadJournallingApi {
 
   def currentEventsByPersistenceId(persistenceId: String, fromSeq: Long, toSeq: Long)(implicit m: Materializer, ec: ExecutionContext): Source[Event, NotUsed]
 
-  def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String])(implicit m: Materializer, ec: ExecutionContext): Source[Event, NotUsed]
+  def currentEventsByPersistenceIdAndLabels(
+                                             persistenceId: String,
+                                             fromSeq: Long,
+                                             toSeq: Long,
+                                             labels: Seq[String],
+                                             maxEvents: Option[Int] = None,
+                                             sortAscending: Boolean = true
+                                           )(implicit m: Materializer, ec: ExecutionContext): Source[Event, NotUsed]
 
   def currentEventsByTag(tag: String, offset: Offset)(implicit m: Materializer, ec: ExecutionContext): Source[(Event, Offset), NotUsed]
 

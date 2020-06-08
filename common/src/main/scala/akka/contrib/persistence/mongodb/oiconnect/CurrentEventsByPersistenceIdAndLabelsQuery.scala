@@ -11,6 +11,8 @@ trait CurrentEventsByPersistenceIdAndLabelsQuery extends ReadJournal {
                                              persistenceId: String,
                                              fromSequenceNr: Long,
                                              toSequenceNr: Long,
-                                             labels: Seq[String]
+                                             labels: Seq[String],
+                                             maxEvents: Option[Int] = None,
+                                             sortAscending: Boolean = true
                                            ): Source[EventEnvelope, NotUsed]
 }

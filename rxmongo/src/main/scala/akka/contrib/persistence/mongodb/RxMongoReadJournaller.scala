@@ -9,9 +9,9 @@ package akka.contrib.persistence.mongodb
 import akka.NotUsed
 import akka.contrib.persistence.mongodb.JournallingFieldNames._
 import akka.persistence.query.{NoOffset, Offset}
-import akka.stream.{Attributes, Materializer, Outlet, SourceShape}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler}
+import akka.stream.{Attributes, Materializer, Outlet, SourceShape}
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 import reactivemongo.akkastream._
 import reactivemongo.api.QueryOpts
@@ -303,5 +303,5 @@ class RxMongoReadJournaller(driver: RxMongoDriver, m: Materializer) extends Mong
     ))).filter{ case(ev, off) => ev.tags.contains(tag) &&  ord.gt(off, offset)}
   }
 
-  override def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String])(implicit m: Materializer, ec: ExecutionContext) = ???
+  override def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String], maxEvents: Option[Int] = None, sortAscending: Boolean = true)(implicit m: Materializer, ec: ExecutionContext) = ???
 }

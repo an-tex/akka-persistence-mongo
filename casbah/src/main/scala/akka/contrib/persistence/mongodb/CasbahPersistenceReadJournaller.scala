@@ -302,5 +302,6 @@ class CasbahPersistenceReadJournaller(driver: CasbahMongoDriver) extends MongoPe
     )
   }
 
-  override def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String])(implicit m: Materializer, ec: ExecutionContext) = ???
+  override def currentEventsByPersistenceIdAndLabels(persistenceId: String, fromSeq: Long, toSeq: Long, labels: Seq[String], maxEvents:Option[Int]=None, sortAscending : Boolean = true
+  )(implicit m: Materializer, ec: ExecutionContext) = ???
 }
